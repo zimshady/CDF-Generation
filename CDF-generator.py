@@ -1,56 +1,51 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
-#Import data from csv file
+
+
+def isfloat(value):
+    '''make sure sample values are floats
+    (problem with different number of values per sample)'''
+    try:
+      float(value)
+      return True
+    except ValueError:
+      return False
+
+def createCDFs (dataset):
+    '''create a dictionary with sample name as key and data for each
+    sample as one list per key'''
+    dataset = dataset
+    num_headers = len(list(dataset))
+    dict_CDF = {}
+    for a in dataset.keys():
+        dict_CDF["{}".format(a)]= 1. * np.arange(len(dataset[a])) / (len(dataset[a]) - 1)
+    return dict_CDF
+
 def getdata ():
-    with open('C:\GitHub Folders\Python-KDE-project\BF11Ages1s.csv', 'rb') as csvfile:
-        reader = csv.reader(csvfile)
-        ages = [map(float, row) for row in reader]
+    '''retrieve data from a CSV file - file must have sample names in first row
+    and data below'''
 
-        return ages
+    with open('E:\GoogleDrive\PhD\Data\Detrital mica\All_onshore_DM_ages.csv') as csvfile:
+        reader = csv.DictReader(csvfile, delimiter = ',' )
+        #create a dict that has sample names as key and associated ages as lists
+        dataset = {}
+        for row in reader:
+            for column, value in row.iteritems():
+                if isfloat(value):
+                    dataset.setdefault(column, []).append(value)
+                else:
+                    break
+        return dataset
 
-def getmoredata ():
-    with open('C:\GitHub Folders\Python-KDE-project\BF12Ages1s.csv', 'rb') as csvfile:
-        reader = csv.reader(csvfile)
-        ages = [map(float, row) for row in reader]
+x = getdata()
+y = createCDFs(x)
 
-        return ages
+#plot data
+for i in x.keys():
+    ax1 = plt.subplot(1,1,1)
+    ax1.plot(x[i],y[i],label=str(i))
 
-# sort the data:
-dataBF11_sorted = np.sort(getdata())
-dataBF12_sorted = np.sort(getmoredata())
 
-# calculate the proportional values of samples
-p1 = 1. * np.arange(len(dataBF11_sorted)) / (len(dataBF11_sorted) - 1)
-p2 = 1. * np.arange(len(dataBF12_sorted)) / (len(dataBF12_sorted) - 1)
-difference = [a - b for a,b in zip(p1,p2)]
-#diff = p1-p2
-np.savetxt('C:\GitHub Folders\CDF-subtraction\pdf.txt',difference)
-
-x_grid = np.linspace(0, 4000, 4000)
-
-# plot the sorted data:
-fig = plt.figure()
-ax1 = fig.add_subplot(122)
-ax1.plot(dataBF11_sorted, p1)
-ax1.set_xlabel('$x$')
-ax1.set_ylabel('$p$')
-
-ax2 = fig.add_subplot(122)
-ax2.plot(dataBF12_sorted, p2)
-ax2.set_xlabel('$x$')
-ax2.set_ylabel('$p$')
-
-ax3 = fig.add_subplot(122)
-ax3.plot(dataBF11_sorted, difference)
-ax3.set_xlabel('$x$')
-ax3.set_ylabel('$p$')
-print np.trapz(p1)
-print np.trapz(p2)
-'''bf11, = plt.plot(dataBF11_sorted, p1, label="BF11",color='blue', alpha=0.5, lw=1)
-bf12, = plt.plot(dataBF12_sorted, p2, label="BF12",color='red', alpha=0.5, lw=1)'''
-#diff, = plt.plot(x_grid,difference, label="Difference", color='purple', alpha=0.5, lw=1)
-
-plt.legend()
-plt.title("BF11-BF12")
+plt.legend(loc='upper left')
 plt.show()
